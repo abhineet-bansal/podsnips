@@ -7,3 +7,7 @@ social-publisher/content/
 
 # Session files
 session.json
+
+# OAuth credentials
+social-publisher/client_secrets.json
+social-publisher/token.pickle
