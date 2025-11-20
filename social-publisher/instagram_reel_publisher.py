@@ -10,9 +10,11 @@ import logging
 # Load environment variables
 load_dotenv()
 
+# Get the directory where this script is located
+SCRIPT_DIR = Path(__file__).parent.absolute()
+
 # Constants
-SESSION_FILE = "session.json"
-VIDEOS_FOLDER = "videos"
+SESSION_FILE = str(SCRIPT_DIR / 'session.json')
 
 class InstagramReelsUploader:
     def __init__(self, debug=False):
@@ -149,87 +151,3 @@ class InstagramReelsUploader:
                 print(json.dumps(self.client.last_json, indent=2))
 
             return None
-
-
-def main():
-    """Main function to run the uploader"""
-    print("""
-╔═══════════════════════════════════════╗
-║  Instagram Reels Uploader v1.0        ║
-╚═══════════════════════════════════════╝
-    """)
-    
-    # Initialize uploader with debug mode
-    try:
-        # Set debug=True to see detailed API responses
-        uploader = InstagramReelsUploader(debug=True)
-    except ValueError as e:
-        print(f"✗ Configuration Error: {e}")
-        print("\nCreate a .env file with:")
-        print("INSTAGRAM_USERNAME=your_username")
-        print("INSTAGRAM_PASSWORD=your_password")
-        return
-    
-    # Login
-    if not uploader.login():
-        print("\n✗ Could not login. Exiting...")
-        return
-    
-    # Get file prefix from user
-    print("\n" + "-"*50)
-    print("Enter the file prefix (without extension):")
-    print("Example: 'my_video' will look for:")
-    print("  - my_video.mp4 (video)")
-    print("  - my_video.txt (caption)")
-    print("  - my_video.png (thumbnail)")
-    file_prefix = "/Users/abhineet/hustle/project-podsnips/social-publisher/content/17Nov-DOACTimFerriss-2" #input("File prefix: ").strip()
-
-    # Validate prefix provided
-    if not file_prefix:
-        print("\n✗ No file prefix provided. Exiting...")
-        return
-
-    # Build file paths
-    video_path = f"{file_prefix}.mp4"
-    caption_file_path = f"{file_prefix}.txt"
-    thumbnail_path = f"{file_prefix}.png"
-
-    # Check if video exists (required)
-    if not os.path.exists(video_path):
-        print(f"\n✗ Video file not found: {video_path}")
-        print("Please ensure the video file exists with .mp4 extension")
-        return
-
-    print(f"✓ Found video: {video_path}")
-
-    # Load caption from .txt file if it exists
-    caption = ""
-    if os.path.exists(caption_file_path):
-        try:
-            with open(caption_file_path, 'r', encoding='utf-8') as f:
-                caption = f.read().strip()
-            print(f"✓ Loaded caption from: {caption_file_path}")
-        except Exception as e:
-            print(f"⚠ Warning: Could not read caption file: {e}")
-            print("Continuing without caption...")
-    else:
-        print(f"ℹ No caption file found ({caption_file_path}), continuing without caption")
-
-    # Check if thumbnail exists
-    if not os.path.exists(thumbnail_path):
-        print(f"ℹ No thumbnail file found ({thumbnail_path}), will auto-generate")
-        thumbnail_path = None
-    else:
-        print(f"✓ Found thumbnail: {thumbnail_path}")
-
-    # Upload the reel
-    result = uploader.upload_reel(video_path, caption, thumbnail_path)
-    
-    if result:
-        print("\n✓ All done! Check your Instagram profile.")
-    else:
-        print("\n✗ Upload failed. Check the errors above.")
-
-
-if __name__ == "__main__":
-    main()
