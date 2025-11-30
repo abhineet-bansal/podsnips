@@ -6,7 +6,7 @@ Automatically extracts snips from Snipd-generated Notion pages and creates indiv
 import os
 from typing import List, Dict, Any
 from dotenv import load_dotenv
-from notion_client import NotionClient
+from notion_client_wrapper import NotionClient
 
 # Load environment variables
 load_dotenv()
