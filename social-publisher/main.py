@@ -79,101 +79,127 @@ def main():
 
     print("="*60)
 
+    # Ask user which platforms to publish to
+    print("\nPublish to which platforms?")
+    print("1. Both YouTube and Instagram (default)")
+    print("2. YouTube only")
+    print("3. Instagram only")
+    choice = input("Choose (1/2/3) [default: 1]: ").strip()
+
+    publish_youtube = choice in ['1', '2', '']
+    publish_instagram = choice in ['1', '3', '']
+
     results = {
         'youtube': None,
         'instagram': None
     }
 
     # ========== PUBLISH TO YOUTUBE ==========
-    print("\n" + "="*60)
-    print("PUBLISHING TO YOUTUBE")
-    print("="*60)
+    if publish_youtube:
+        print("\n" + "="*60)
+        print("PUBLISHING TO YOUTUBE")
+        print("="*60)
 
-    try:
-        # Initialize YouTube uploader
-        youtube_uploader = YouTubeShortsUploader()
+        try:
+            # Initialize YouTube uploader
+            youtube_uploader = YouTubeShortsUploader()
 
-        # Authenticate
-        if not youtube_uploader.authenticate():
-            print("✗ YouTube authentication failed")
-            results['youtube'] = False
-        else:
-            # Upload to YouTube
-            result = youtube_uploader.upload_video(
-                video_path=video_path,
-                title=title,
-                description=text_content,
-                thumbnail_path=thumbnail_path if thumbnail_exists else None
-            )
-
-            results['youtube'] = result is not None
-
-            if results['youtube']:
-                print("✓ YouTube upload successful!")
+            # Authenticate
+            if not youtube_uploader.authenticate():
+                print("✗ YouTube authentication failed")
+                results['youtube'] = False
             else:
-                print("✗ YouTube upload failed")
+                # Upload to YouTube
+                result = youtube_uploader.upload_video(
+                    video_path=video_path,
+                    title=title,
+                    description=text_content,
+                    thumbnail_path=thumbnail_path if thumbnail_exists else None
+                )
 
-    except Exception as e:
-        print(f"✗ YouTube upload error: {e}")
-        results['youtube'] = False
+                results['youtube'] = result is not None
+
+                if results['youtube']:
+                    print("✓ YouTube upload successful!")
+                else:
+                    print("✗ YouTube upload failed")
+
+        except Exception as e:
+            print(f"✗ YouTube upload error: {e}")
+            results['youtube'] = False
 
     # ========== PUBLISH TO INSTAGRAM ==========
-    print("\n" + "="*60)
-    print("PUBLISHING TO INSTAGRAM")
-    print("="*60)
+    if publish_instagram:
+        print("\n" + "="*60)
+        print("PUBLISHING TO INSTAGRAM")
+        print("="*60)
 
-    try:
-        # Initialize Instagram uploader
-        instagram_uploader = InstagramReelsUploader(debug=False)
+        try:
+            # Initialize Instagram uploader
+            instagram_uploader = InstagramReelsUploader(debug=False)
 
-        # Login
-        if not instagram_uploader.login():
-            print("✗ Instagram authentication failed")
-            results['instagram'] = False
-        else:
-            # Upload to Instagram
-            result = instagram_uploader.upload_reel(
-                video_path=video_path,
-                caption=text_content,
-                thumbnail_path=thumbnail_path if thumbnail_exists else None
-            )
-
-            results['instagram'] = result is not None
-
-            if results['instagram']:
-                print("✓ Instagram upload successful!")
+            # Login
+            if not instagram_uploader.login():
+                print("✗ Instagram authentication failed")
+                results['instagram'] = False
             else:
-                print("✗ Instagram upload failed")
+                # Upload to Instagram
+                result = instagram_uploader.upload_reel(
+                    video_path=video_path,
+                    caption=text_content,
+                    thumbnail_path=thumbnail_path if thumbnail_exists else None
+                )
 
-    except ValueError as e:
-        print(f"✗ Instagram configuration error: {e}")
-        print("\nMake sure you have a .env file with:")
-        print("INSTAGRAM_USERNAME=your_username")
-        print("INSTAGRAM_PASSWORD=your_password")
-        results['instagram'] = False
-    except Exception as e:
-        print(f"✗ Instagram upload error: {e}")
-        results['instagram'] = False
+                results['instagram'] = result is not None
+
+                if results['instagram']:
+                    print("✓ Instagram upload successful!")
+                else:
+                    print("✗ Instagram upload failed")
+
+        except ValueError as e:
+            print(f"✗ Instagram configuration error: {e}")
+            print("\nMake sure you have a .env file with:")
+            print("INSTAGRAM_USERNAME=your_username")
+            print("INSTAGRAM_PASSWORD=your_password")
+            results['instagram'] = False
+        except Exception as e:
+            print(f"✗ Instagram upload error: {e}")
+            results['instagram'] = False
 
     # ========== SUMMARY ==========
     print("\n" + "="*60)
     print("PUBLISHING SUMMARY")
     print("="*60)
 
-    youtube_status = "✓ SUCCESS" if results['youtube'] else "✗ FAILED"
-    instagram_status = "✓ SUCCESS" if results['instagram'] else "✗ FAILED"
+    if publish_youtube:
+        youtube_status = "✓ SUCCESS" if results['youtube'] else "✗ FAILED"
+        print(f"YouTube:   {youtube_status}")
 
-    print(f"YouTube:   {youtube_status}")
-    print(f"Instagram: {instagram_status}")
+    if publish_instagram:
+        instagram_status = "✓ SUCCESS" if results['instagram'] else "✗ FAILED"
+        print(f"Instagram: {instagram_status}")
+
     print("="*60)
 
     # Overall result
-    if results['youtube'] and results['instagram']:
-        print("\n✓ All uploads completed successfully!")
-    elif results['youtube'] or results['instagram']:
-        print("\n⚠ Some uploads failed. Check the errors above.")
-    else:
-        print("\n✗ All uploads failed. Check the errors above.")
+    if publish_youtube and publish_instagram:
+        if results['youtube'] and results['instagram']:
+            print("\n✓ All uploads completed successfully!")
+        elif results['youtube'] or results['instagram']:
+            print("\n⚠ Some uploads failed. Check the errors above.")
+        else:
+            print("\n✗ All uploads failed. Check the errors above.")
+    elif publish_youtube:
+        if results['youtube']:
+            print("\n✓ YouTube upload completed successfully!")
+        else:
+            print("\n✗ YouTube upload failed.")
+    elif publish_instagram:
+        if results['instagram']:
+            print("\n✓ Instagram upload completed successfully!")
+        else:
+            print("\n✗ Instagram upload failed.")
 
 
 if __name__ == "__main__":
