@@ -79,7 +79,7 @@ def get_project_detail(project_id):
 
 
 @app.route(API_BASE_URL + '/projects/<project_id>/tasks', methods=['GET'])
-def get_project_tasks(project_id):
+def get_tasks(project_id):
     """
     Get detailed tasks of a specific project including all headings
     Returns: Project details with list of headings as tasks
