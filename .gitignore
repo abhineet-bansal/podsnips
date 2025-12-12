@@ -1,6 +1,7 @@
 # Environment variables
 **/.env
 .venv
+**/.tokens
 
 # content to upload
 social-publisher/content/
@@ -11,3 +12,6 @@ session.json
 # OAuth credentials
 social-publisher/client_secrets.json
 social-publisher/token.pickle
+
+# Python Cache
+**/__pycache__
