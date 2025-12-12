@@ -64,6 +64,18 @@ class NotionClient:
             print(f"Error querying database: {e}")
             return []
 
+    def get_page_properties(self, page_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve the properties of a specific page."""
+        try:
+            response = self.client.request(
+                method="GET",
+                path=f"pages/{page_id}"
+            )
+            return response.get("properties", {})
+        except Exception as e:
+            print(f"Error retrieving page properties: {e}")
+            return None
+
     def get_page_content(self, page_id: str) -> List[Dict[str, Any]]:
         """Retrieve all blocks (content) from a page."""
         try:

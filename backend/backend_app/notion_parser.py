@@ -37,34 +37,26 @@ def get_pending_projects() -> List[Dict]:
         properties = page.get("properties", {})
         
         # Extract relevant properties
-        project_data = {
-            "id": page_id,
-            "status": "",
-            "episode": "",
-            "podcast_show": "",
-            "snips": ""
-        }
-        
-        # Parse properties
-        for prop_name, prop_data in properties.items():
-            prop_type = prop_data.get("type")
-            
-            if prop_type == "title":
-                project_data["episode"] = extract_text_from_rich_text(
-                    prop_data.get("title", [])
-                )
-            elif prop_name == "Status" and prop_type == "status":
-                project_data["status"] = prop_data.get("status", {}).get("name", "")
-            elif prop_name == "Show" and prop_type == "rich_text":
-                project_data["podcast_show"] = extract_text_from_rich_text(
-                    prop_data.get("rich_text", [])
-                )
-            elif prop_name == "Snips" and prop_type == "number":
-                project_data["snips"] = prop_data.get("number", 0)
-        
+        project_data = extract_project_data(page_id, properties)
         projects.append(project_data)
     
     return projects
+
+
+def get_project_details(project_id) -> Dict:
+    """
+    Get properties of a page
+    """
+    # Validate configuration
+    if not NOTION_API_KEY or not SOURCE_DATABASE_ID:
+        print("ERROR: NOTION_API_KEY or SOURCE_DATABASE_ID not set")
+        return []
+
+    # Initialize Notion API client
+    notion_api = NotionClient(NOTION_API_KEY)
+
+    properties = notion_api.get_page_properties(project_id)
+    return extract_project_data(project_id, properties)
 
 
 def get_project_tasks(project_id) -> List[Dict]:
@@ -162,3 +154,33 @@ def extract_snip_data(toggle_block: Dict, children: List[Dict]) -> Dict[str, str
         snip_data["summary"] = "\n".join(summary_parts)
 
     return snip_data
+
+
+def extract_project_data(page_id, properties):
+    # Extract relevant properties
+    project_data = {
+        "id": page_id,
+        "status": "",
+        "episode": "",
+        "podcast_show": "",
+        "snips": ""
+    }
+    
+    # Parse properties
+    for prop_name, prop_data in properties.items():
+        prop_type = prop_data.get("type")
+        
+        if prop_type == "title":
+            project_data["episode"] = extract_text_from_rich_text(
+                prop_data.get("title", [])
+            )
+        elif prop_name == "Status" and prop_type == "status":
+            project_data["status"] = prop_data.get("status", {}).get("name", "")
+        elif prop_name == "Show" and prop_type == "rich_text":
+            project_data["podcast_show"] = extract_text_from_rich_text(
+                prop_data.get("rich_text", [])
+            )
+        elif prop_name == "Snips" and prop_type == "number":
+            project_data["snips"] = prop_data.get("number", 0)
+    
+    return project_data
