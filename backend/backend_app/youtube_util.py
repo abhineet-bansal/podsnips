@@ -33,21 +33,9 @@ def get_video_transcript(video_id: str) -> Dict:
         }
 
     # Fetch transcript
-    try:
-        ytt_api = YouTubeTranscriptApi()
-        transcript = ytt_api.fetch(video_id)
-        raw_transcript = transcript.to_raw_data()
-        return {
-            "success": True,
-            "video_id": video_id,
-            "transcript": raw_transcript
-        }
-    except Exception as e:
-        return {
-            "success": False,
-            "video_id": video_id,
-            "error": str(e)
-        }
+    ytt_api = YouTubeTranscriptApi()
+    transcript = ytt_api.fetch(video_id)
+    return transcript.to_raw_data()
 
 
 def search_youtube_video(search_query: str):
