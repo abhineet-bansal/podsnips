@@ -1,9 +1,16 @@
 import React from 'react';
+import { useSelector } from 'react-redux';
+import { selectVideoId } from '../tasks/tasksSlice';
+import { buildYouTubeUrl } from '../../utils/timeUtils';
 
 const ProjectDetails = ({ project }) => {
+  const videoId = useSelector(selectVideoId);
+
   if (!project) {
     return null;
   }
+
+  const youtubeUrl = videoId ? buildYouTubeUrl(videoId) : null;
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -22,6 +29,20 @@ const ProjectDetails = ({ project }) => {
           <div>
             <span className="font-semibold text-gray-700">Podcast Show:</span>
             <p className="text-gray-600 mt-1">{project.podcast_show}</p>
+          </div>
+        )}
+
+        {youtubeUrl && (
+          <div>
+            <span className="font-semibold text-gray-700">YouTube Video:</span>
+            <a
+              href={youtubeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block mt-1 text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              Watch on YouTube
+            </a>
           </div>
         )}
 
