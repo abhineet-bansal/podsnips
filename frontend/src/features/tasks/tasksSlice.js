@@ -65,6 +65,14 @@ const tasksSlice = createSlice({
         task.clips.push(clip);
       }
     },
+    rejectTask: (state, action) => {
+      const { taskId } = action.payload;
+      const task = state.tasksList.find((t) => t.id === taskId);
+      if (task) {
+        task.rejected = true;
+        task.rejectedAt = new Date().toISOString();
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -102,7 +110,7 @@ const tasksSlice = createSlice({
   },
 });
 
-export const { clearTasks, addClipToTask } = tasksSlice.actions;
+export const { clearTasks, addClipToTask, rejectTask } = tasksSlice.actions;
 
 // Selectors
 export const selectTasks = (state) => state.tasks.tasksList;

@@ -1,19 +1,30 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { rejectTask } from './tasksSlice';
 
 const TaskListItem = ({ task, projectId }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleClick = () => {
     navigate(`/project/${projectId}/task/${encodeURIComponent(task.id)}`);
   };
 
+  const handleReject = (e) => {
+    e.stopPropagation(); // Prevent navigation when clicking reject button
+    dispatch(rejectTask({ taskId: task.id }));
+  };
+
   const hasClip = task.clips && task.clips.length > 0;
+  const isRejected = task.rejected === true;
 
   return (
     <div
       onClick={handleClick}
-      className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer border border-gray-200 hover:border-blue-300"
+      className={`bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer border border-gray-200 hover:border-blue-300 ${
+        isRejected ? 'opacity-50 bg-gray-50' : ''
+      }`}
     >
       <div className="flex items-start gap-4">
         {/* Left two-thirds: Task info */}
@@ -33,7 +44,7 @@ const TaskListItem = ({ task, projectId }) => {
           )}
         </div>
 
-        {/* Right third: Clip info */}
+        {/* Right third: Clip info or Reject button */}
         <div className="w-1/3 flex items-center justify-end gap-2">
           {hasClip ? (
             <div className="bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 text-right">
@@ -44,10 +55,17 @@ const TaskListItem = ({ task, projectId }) => {
                 {task.clips[0].startTime} → {task.clips[0].endTime}
               </div>
             </div>
-          ) : (
-            <div className="text-xs text-gray-400 italic">
-              No clip created
+          ) : isRejected ? (
+            <div className="text-xs text-gray-500 italic font-medium">
+              ❌ Rejected
             </div>
+          ) : (
+            <button
+              onClick={handleReject}
+              className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-xs font-medium border border-red-200"
+            >
+              Reject
+            </button>
           )}
           <svg
             className="w-5 h-5 text-gray-400 flex-shrink-0"

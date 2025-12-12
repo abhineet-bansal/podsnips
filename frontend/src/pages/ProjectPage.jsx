@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -19,6 +19,7 @@ const ProjectPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [activeFilter, setActiveFilter] = useState('all');
 
   const projects = useSelector(selectProjects);
   const tasks = useSelector(selectTasks);
@@ -42,6 +43,30 @@ const ProjectPage = () => {
   const handleRetry = () => {
     dispatch(fetchTasks(projectId));
   };
+
+  // Filter tasks based on active filter
+  const filteredTasks = tasks.filter((task) => {
+    const hasClip = task.clips && task.clips.length > 0;
+    const isRejected = task.rejected === true;
+
+    switch (activeFilter) {
+      case 'all':
+        return true;
+      case 'pending':
+        return !isRejected && !hasClip;
+      case 'completed':
+        return hasClip;
+      default:
+        return true;
+    }
+  });
+
+  // Calculate counts for each filter
+  const allCount = tasks.length;
+  const pendingCount = tasks.filter(
+    (t) => !t.rejected && !(t.clips && t.clips.length > 0)
+  ).length;
+  const completedCount = tasks.filter((t) => t.clips && t.clips.length > 0).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -71,6 +96,42 @@ const ProjectPage = () => {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-2xl font-bold text-gray-900 mb-6">Tasks</h3>
 
+          {/* Filter Tabs */}
+          {!tasksLoading && !tasksError && tasks.length > 0 && (
+            <div className="flex border-b border-gray-200 mb-6">
+              <button
+                onClick={() => setActiveFilter('all')}
+                className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
+                  activeFilter === 'all'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                All ({allCount})
+              </button>
+              <button
+                onClick={() => setActiveFilter('pending')}
+                className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
+                  activeFilter === 'pending'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                Pending ({pendingCount})
+              </button>
+              <button
+                onClick={() => setActiveFilter('completed')}
+                className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
+                  activeFilter === 'completed'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                Completed ({completedCount})
+              </button>
+            </div>
+          )}
+
           {tasksLoading && <LoadingSpinner message="Loading tasks..." />}
 
           {tasksError && (
@@ -81,9 +142,16 @@ const ProjectPage = () => {
             <EmptyState message="No tasks found for this project" icon="📋" />
           )}
 
-          {!tasksLoading && !tasksError && tasks.length > 0 && (
+          {!tasksLoading && !tasksError && tasks.length > 0 && filteredTasks.length === 0 && (
+            <EmptyState
+              message={`No ${activeFilter === 'all' ? '' : activeFilter} tasks found`}
+              icon="🔍"
+            />
+          )}
+
+          {!tasksLoading && !tasksError && filteredTasks.length > 0 && (
             <div className="space-y-3">
-              {tasks.map((task) => (
+              {filteredTasks.map((task) => (
                 <TaskListItem key={task.id} task={task} projectId={projectId} />
               ))}
             </div>

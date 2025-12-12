@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectTranscript, selectVideoId, addClipToTask } from './tasksSlice';
+import { selectTranscript, selectVideoId, addClipToTask, rejectTask } from './tasksSlice';
 import { getTranscriptSegments, secondsToTime, buildYouTubeUrl, timeToSeconds } from '../../utils/timeUtils';
 import { podSnipsApi } from '../../services/podSnipsApi';
 
@@ -16,6 +16,13 @@ const TaskDetails = ({ task }) => {
   const [clipTitle, setClipTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
+
+  const handleReject = () => {
+    dispatch(rejectTask({ taskId: task.id }));
+  };
+
+  const hasClip = task.clips && task.clips.length > 0;
+  const isRejected = task.rejected === true;
 
   if (!task) {
     return (
@@ -132,11 +139,26 @@ const TaskDetails = ({ task }) => {
   const hasValidRange = rangeStart !== null && rangeEnd !== null;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className={`bg-white rounded-lg shadow-md p-6 ${isRejected ? 'opacity-75 bg-gray-50' : ''}`}>
       <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          {task.title || 'Untitled Task'}
-        </h2>
+        <div className="flex justify-between items-start mb-2">
+          <h2 className="text-3xl font-bold text-gray-900">
+            {task.title || 'Untitled Task'}
+          </h2>
+          {!hasClip && !isRejected && (
+            <button
+              onClick={handleReject}
+              className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium border border-red-200"
+            >
+              Reject Task
+            </button>
+          )}
+          {isRejected && (
+            <span className="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg text-sm font-medium border border-gray-300">
+              ❌ Rejected
+            </span>
+          )}
+        </div>
         {task.timestamp && (
           <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
             {task.timestamp}
