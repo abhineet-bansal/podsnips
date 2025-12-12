@@ -15,3 +15,6 @@ social-publisher/token.pickle
 
 # Python Cache
 **/__pycache__
+
+**/.DS_Store
+
