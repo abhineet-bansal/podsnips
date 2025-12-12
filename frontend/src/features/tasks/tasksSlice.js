@@ -55,6 +55,16 @@ const tasksSlice = createSlice({
       state.transcript = null;
       state.videoId = null;
     },
+    addClipToTask: (state, action) => {
+      const { taskId, clip } = action.payload;
+      const task = state.tasksList.find((t) => t.id === taskId);
+      if (task) {
+        if (!task.clips) {
+          task.clips = [];
+        }
+        task.clips.push(clip);
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -92,7 +102,7 @@ const tasksSlice = createSlice({
   },
 });
 
-export const { clearTasks } = tasksSlice.actions;
+export const { clearTasks, addClipToTask } = tasksSlice.actions;
 
 // Selectors
 export const selectTasks = (state) => state.tasks.tasksList;
