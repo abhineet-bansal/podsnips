@@ -1,10 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
+import projectsReducer from '../features/projects/projectsSlice';
 
 // Redux store configuration
-// Reducers will be added here as we create slices
 export const store = configureStore({
   reducer: {
-    // projects: projectsReducer, // Will be added in Phase 2
+    projects: projectsReducer,
     // tasks: tasksReducer,       // Will be added in Phase 3
   },
 });
