@@ -4,7 +4,7 @@
 **/.tokens
 
 # content to upload
-social-publisher/content/
+**/content/
 
 # Session files
 session.json
