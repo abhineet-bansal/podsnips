@@ -93,6 +93,33 @@ def get_project_tasks(project_id, page: int = 1, page_size: int = 10) -> Dict:
     # Find all Toggle Heading 3 blocks
     toggle_headings = [block for block in blocks if block.get("type") == "heading_3" and block["heading_3"].get("is_toggleable")]
 
+    # Remove duplicates based on timestamp in the toggle heading
+    seen_timestamps = set()
+    unique_toggle_headings = []
+    for toggle in toggle_headings:
+        # Extract the toggle heading title to get timestamp
+        toggle_title = extract_text_from_rich_text(toggle["heading_3"].get("rich_text", []))
+
+        # Extract timestamp - find first [ and first ] and take what's between them
+        first_bracket = toggle_title.find('[')
+        first_close = toggle_title.find(']')
+        timestamp = None
+        if first_bracket != -1 and first_close != -1 and first_close > first_bracket:
+            # Remove the [ and ] characters
+            timestamp_raw = toggle_title[first_bracket+1:first_close]
+            # Remove any extra [ if it's [[
+            timestamp = timestamp_raw.strip('[').strip(']')
+
+        # Only add if timestamp hasn't been seen before
+        if timestamp and timestamp not in seen_timestamps:
+            seen_timestamps.add(timestamp)
+            unique_toggle_headings.append(toggle)
+        elif not timestamp:
+            # If no timestamp found, keep the toggle (edge case)
+            unique_toggle_headings.append(toggle)
+
+    toggle_headings = unique_toggle_headings
+
     total_count = len(toggle_headings)
     total_pages = (total_count + page_size - 1) // page_size  # Ceiling division
 
