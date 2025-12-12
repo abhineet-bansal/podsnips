@@ -2,15 +2,15 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { REHYDRATE } from 'redux-persist';
 import { podSnipsApi } from '../../services/podSnipsApi';
 
-// Async thunk to fetch tasks and transcript for a project
+// Async thunk to fetch first page of tasks and transcript
 export const fetchTasks = createAsyncThunk(
   'tasks/fetchTasks',
-  async (projectId, { rejectWithValue }) => {
+  async (projectId, { rejectWithValue, dispatch }) => {
     try {
-      console.log('🌐 Fetching tasks & transcript from BACKEND for project:', projectId);
-      // Fetch both tasks and transcript in parallel
+      console.log('🌐 Fetching first page of tasks & transcript from BACKEND for project:', projectId);
+      // Fetch first page of tasks and transcript in parallel
       const [tasksResponse, transcriptResponse] = await Promise.all([
-        podSnipsApi.fetchAllProjectTasks(projectId),
+        podSnipsApi.fetchProjectTasks(projectId, 1, 10),
         podSnipsApi.fetchProjectTranscript(projectId)
       ]);
 
@@ -20,18 +20,61 @@ export const fetchTasks = createAsyncThunk(
         id: task.timestamp, // Use timestamp as unique ID
       }));
 
-      console.log('✅ Loaded', tasksWithIds.length, 'tasks from BACKEND');
+      console.log('✅ Loaded', tasksWithIds.length, 'tasks from BACKEND (page 1)');
       console.log('✅ Loaded transcript with', transcriptResponse.transcript?.length || 0, 'segments from BACKEND');
 
+      // If there are more pages, start fetching them in the background
+      if (tasksResponse.has_next) {
+        console.log('📥 More tasks available, loading in background...');
+        dispatch(fetchRemainingTasks({ projectId, startPage: 2 }));
+      }
+
       // Return both datasets
-      // Note: transcriptResponse is already the full response object {success, transcript, video_id}
       return {
         tasks: tasksWithIds,
-        transcript: transcriptResponse.transcript || [], // Extract array from response
+        transcript: transcriptResponse.transcript || [],
         videoId: transcriptResponse.video_id,
+        hasMore: tasksResponse.has_next,
       };
     } catch (error) {
       console.error('❌ Failed to fetch tasks from backend:', error.message);
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Async thunk to fetch remaining pages of tasks
+export const fetchRemainingTasks = createAsyncThunk(
+  'tasks/fetchRemainingTasks',
+  async ({ projectId, startPage }, { rejectWithValue, dispatch }) => {
+    try {
+      let page = startPage;
+      let hasNext = true;
+      let allNewTasks = [];
+
+      while (hasNext) {
+        const response = await podSnipsApi.fetchProjectTasks(projectId, page, 10);
+
+        // Add ID to each task
+        const tasksWithIds = response.tasks.map((task) => ({
+          ...task,
+          id: task.timestamp,
+        }));
+
+        allNewTasks = [...allNewTasks, ...tasksWithIds];
+        console.log(`✅ Loaded page ${page} with ${tasksWithIds.length} tasks`);
+
+        // Dispatch action to append these tasks immediately
+        dispatch(appendTasks(tasksWithIds));
+
+        hasNext = response.has_next;
+        page++;
+      }
+
+      console.log(`✅ Finished loading all remaining tasks (${allNewTasks.length} total)`);
+      return { tasks: allNewTasks };
+    } catch (error) {
+      console.error('❌ Failed to fetch remaining tasks:', error.message);
       return rejectWithValue(error.message);
     }
   }
@@ -42,6 +85,7 @@ const tasksSlice = createSlice({
   initialState: {
     tasksList: [],
     tasksLoading: false,
+    loadingMoreTasks: false, // Track if we're loading additional pages
     tasksError: null,
     currentProjectId: null, // Track which project's tasks are loaded
     transcript: null,        // Array of transcript segments
@@ -54,6 +98,7 @@ const tasksSlice = createSlice({
       state.currentProjectId = null;
       state.transcript = null;
       state.videoId = null;
+      state.loadingMoreTasks = false;
     },
     addClipToTask: (state, action) => {
       const { taskId, clip } = action.payload;
@@ -73,6 +118,12 @@ const tasksSlice = createSlice({
         task.rejectedAt = new Date().toISOString();
       }
     },
+    appendTasks: (state, action) => {
+      // Append new tasks to the existing list, avoiding duplicates
+      const existingIds = new Set(state.tasksList.map(t => t.id));
+      const newTasks = action.payload.filter(task => !existingIds.has(task.id));
+      state.tasksList = [...state.tasksList, ...newTasks];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -90,6 +141,17 @@ const tasksSlice = createSlice({
       .addCase(fetchTasks.rejected, (state, action) => {
         state.tasksLoading = false;
         state.tasksError = action.payload;
+      })
+      // Handle fetching remaining tasks
+      .addCase(fetchRemainingTasks.pending, (state) => {
+        state.loadingMoreTasks = true;
+      })
+      .addCase(fetchRemainingTasks.fulfilled, (state) => {
+        state.loadingMoreTasks = false;
+      })
+      .addCase(fetchRemainingTasks.rejected, (state, action) => {
+        state.loadingMoreTasks = false;
+        console.error('Failed to load remaining tasks:', action.payload);
       })
       .addCase(REHYDRATE, (state, action) => {
         // Handle rehydration from localStorage
@@ -110,11 +172,12 @@ const tasksSlice = createSlice({
   },
 });
 
-export const { clearTasks, addClipToTask, rejectTask } = tasksSlice.actions;
+export const { clearTasks, addClipToTask, rejectTask, appendTasks } = tasksSlice.actions;
 
 // Selectors
 export const selectTasks = (state) => state.tasks.tasksList;
 export const selectTasksLoading = (state) => state.tasks.tasksLoading;
+export const selectLoadingMoreTasks = (state) => state.tasks.loadingMoreTasks;
 export const selectTasksError = (state) => state.tasks.tasksError;
 export const selectCurrentProjectId = (state) => state.tasks.currentProjectId;
 export const selectTranscript = (state) => state.tasks.transcript;
