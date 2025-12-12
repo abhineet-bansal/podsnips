@@ -59,33 +59,59 @@ def get_project_details(project_id) -> Dict:
     return extract_project_data(project_id, properties)
 
 
-def get_project_tasks(project_id) -> List[Dict]:
+def get_project_tasks(project_id, page: int = 1, page_size: int = 10) -> Dict:
     """
-    Get all Toggle Heading 3 from the specified page, as tasks
-    
+    Get Toggle Heading 3 from the specified page, as tasks (paginated)
+
+    Args:
+        project_id: The Notion page ID
+        page: Page number (1-indexed)
+        page_size: Number of tasks per page
+
     Returns:
-        List of task objects
+        Dict containing paginated tasks and metadata
     """
     # Validate configuration
     if not NOTION_API_KEY or not SOURCE_DATABASE_ID:
         print("ERROR: NOTION_API_KEY or SOURCE_DATABASE_ID not set")
-        return []
+        return {
+            "page": page,
+            "page_size": page_size,
+            "total_count": 0,
+            "total_pages": 0,
+            "has_next": False,
+            "has_previous": False,
+            "tasks": []
+        }
 
     # Initialize Notion API client
     notion_api = NotionClient(NOTION_API_KEY)
 
-    # Get page content
+    # Get page content - fetch all blocks
     blocks = notion_api.get_page_content(project_id)
 
     # Find all Toggle Heading 3 blocks
     toggle_headings = [block for block in blocks if block.get("type") == "heading_3" and block["heading_3"].get("is_toggleable")]
 
-    print(f"  Found {len(toggle_headings)} toggle headings (snips)")
+    total_count = len(toggle_headings)
+    total_pages = (total_count + page_size - 1) // page_size  # Ceiling division
 
-    # Process each toggle heading
+    print(f"  Found {total_count} toggle headings (snips)")
+    print(f"  Pagination: page {page}/{total_pages}, page_size={page_size}")
+
+    # Calculate pagination slice
+    start_idx = (page - 1) * page_size
+    end_idx = start_idx + page_size
+
+    # Get only the toggles for the current page
+    paginated_toggles = toggle_headings[start_idx:end_idx]
+
+    print(f"  Processing {len(paginated_toggles)} toggles for this page")
+
+    # Process only the toggles in the current page
     tasks = []
-    for toggle in toggle_headings:
-        # Get children of toggle
+    for toggle in paginated_toggles:
+        # Get children of toggle - only for tasks in this page
         children = notion_api.get_toggle_children(toggle["id"])
 
         # Extract snip data
@@ -93,7 +119,15 @@ def get_project_tasks(project_id) -> List[Dict]:
 
         tasks.append(snip_data)
 
-    return tasks
+    return {
+        "page": page,
+        "page_size": page_size,
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_previous": page > 1,
+        "tasks": tasks
+    }
 
 
 

@@ -82,23 +82,40 @@ def get_project_detail(project_id):
 def get_tasks(project_id):
     """
     Get detailed tasks of a specific project including all headings
-    Returns: Project details with list of headings as tasks
+    Returns: Project details with list of headings as tasks (paginated)
     """
     print("=" * 40)
     print(f"/projects/{project_id}/tasks")
     print("=" * 40)
 
     try:
-        # Extract headings as tasks
-        tasks = get_project_tasks(project_id)
+        # Get pagination parameters from query string
+        page = request.args.get('page', 1, type=int)
+        page_size = request.args.get('page_size', 10, type=int)
+
+        # Validate pagination parameters
+        if page < 1:
+            page = 1
+        if page_size < 1 or page_size > 100:
+            page_size = 10
+
+        print(f"Pagination: page={page}, page_size={page_size}")
+
+        # Extract headings as tasks with pagination
+        result = get_project_tasks(project_id, page=page, page_size=page_size)
 
         return jsonify({
             "success": True,
             "project_id": project_id,
-            "task_count": len(tasks),
-            "tasks": tasks
+            "page": result["page"],
+            "page_size": result["page_size"],
+            "total_count": result["total_count"],
+            "total_pages": result["total_pages"],
+            "has_next": result["has_next"],
+            "has_previous": result["has_previous"],
+            "tasks": result["tasks"]
         })
-    
+
     except Exception as e:
         return jsonify({
             "success": False,
