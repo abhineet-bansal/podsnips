@@ -31,6 +31,25 @@ const TaskPage = () => {
     }
   }, [dispatch, projectId, currentProjectId]);
 
+  // Find current task index and calculate previous/next
+  const currentTaskIndex = tasks.findIndex((t) => t.id === decodedTaskId);
+  const hasPrevious = currentTaskIndex > 0;
+  const hasNext = currentTaskIndex < tasks.length - 1;
+  const previousTask = hasPrevious ? tasks[currentTaskIndex - 1] : null;
+  const nextTask = hasNext ? tasks[currentTaskIndex + 1] : null;
+
+  const handlePrevious = () => {
+    if (previousTask) {
+      navigate(`/project/${projectId}/task/${encodeURIComponent(previousTask.id)}`);
+    }
+  };
+
+  const handleNext = () => {
+    if (nextTask) {
+      navigate(`/project/${projectId}/task/${encodeURIComponent(nextTask.id)}`);
+    }
+  };
+
   if (tasksLoading || (tasks.length === 0)) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -44,25 +63,58 @@ const TaskPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <button
-          onClick={() => navigate(`/project/${projectId}`)}
-          className="mb-6 flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-        >
-          <svg
-            className="w-5 h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={() => navigate(`/project/${projectId}`)}
+            className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Back to Project
-        </button>
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back to Project
+          </button>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handlePrevious}
+              disabled={!hasPrevious}
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ${
+                hasPrevious
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Previous
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={!hasNext}
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ${
+                hasNext
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              Next
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
 
         <TaskDetails task={task} />
       </div>
