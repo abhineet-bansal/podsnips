@@ -32,9 +32,12 @@ const ProjectPage = () => {
   // Only fetch tasks if they're not already loaded for this project
   useEffect(() => {
     if (currentProjectId !== projectId) {
+      console.log('📋 No tasks for project', projectId, 'in Redux, fetching from backend...');
       dispatch(fetchTasks(projectId));
+    } else {
+      console.log('⚡ Using', tasks.length, 'tasks from REDUX CACHE for project', projectId, '(no fetch needed)');
     }
-  }, [dispatch, projectId, currentProjectId]);
+  }, [dispatch, projectId, currentProjectId, tasks.length]);
 
   const handleRetry = () => {
     dispatch(fetchTasks(projectId));

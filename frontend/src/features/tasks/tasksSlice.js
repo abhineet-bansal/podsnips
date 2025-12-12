@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { REHYDRATE } from 'redux-persist';
 import { podSnipsApi } from '../../services/podSnipsApi';
 
 // Async thunk to fetch tasks and transcript for a project
@@ -6,6 +7,7 @@ export const fetchTasks = createAsyncThunk(
   'tasks/fetchTasks',
   async (projectId, { rejectWithValue }) => {
     try {
+      console.log('🌐 Fetching tasks & transcript from BACKEND for project:', projectId);
       // Fetch both tasks and transcript in parallel
       const [tasksResponse, transcriptResponse] = await Promise.all([
         podSnipsApi.fetchAllProjectTasks(projectId),
@@ -18,6 +20,9 @@ export const fetchTasks = createAsyncThunk(
         id: task.timestamp, // Use timestamp as unique ID
       }));
 
+      console.log('✅ Loaded', tasksWithIds.length, 'tasks from BACKEND');
+      console.log('✅ Loaded transcript with', transcriptResponse.transcript?.length || 0, 'segments from BACKEND');
+
       // Return both datasets
       // Note: transcriptResponse is already the full response object {success, transcript, video_id}
       return {
@@ -26,6 +31,7 @@ export const fetchTasks = createAsyncThunk(
         videoId: transcriptResponse.video_id,
       };
     } catch (error) {
+      console.error('❌ Failed to fetch tasks from backend:', error.message);
       return rejectWithValue(error.message);
     }
   }
@@ -66,6 +72,22 @@ const tasksSlice = createSlice({
       .addCase(fetchTasks.rejected, (state, action) => {
         state.tasksLoading = false;
         state.tasksError = action.payload;
+      })
+      .addCase(REHYDRATE, (state, action) => {
+        // Handle rehydration from localStorage
+        if (action.payload && action.payload.tasks) {
+          const tasksFromStorage = action.payload.tasks.tasksList || [];
+          const transcriptFromStorage = action.payload.tasks.transcript || [];
+          if (tasksFromStorage.length > 0) {
+            console.log('💾 Loaded', tasksFromStorage.length, 'tasks from STORAGE');
+          }
+          if (transcriptFromStorage.length > 0) {
+            console.log('💾 Loaded transcript with', transcriptFromStorage.length, 'segments from STORAGE');
+          }
+          if (action.payload.tasks.currentProjectId) {
+            console.log('💾 Restored project context:', action.payload.tasks.currentProjectId);
+          }
+        }
       });
   },
 });
