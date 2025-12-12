@@ -1,7 +1,7 @@
 import os
 import requests
 import time
-from auth_utils import load_tokens
+from .auth_utils import load_tokens
 
 
 API_BASE = "https://api.canva.com/rest/v1"

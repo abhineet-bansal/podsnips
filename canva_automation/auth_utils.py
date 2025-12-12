@@ -42,29 +42,29 @@ def check_tokens():
         print(f"✗ Error reading .tokens file: {e}")
         return False
 
-    # Validate token using the introspect API endpoint
+    # Validate token by making a simple API call to /users/me endpoint
     print("= Validating Canva access token...")
     headers = {
-        'Authorization': f'Bearer {access_token}',
-        'Content-Type': 'application/json'
+        'Authorization': f'Bearer {access_token}'
     }
 
     try:
-        response = requests.post(
-            "https://api.canva.com/rest/v1/oauth/introspect",
+        response = requests.get(
+            "https://api.canva.com/rest/v1/users/me",
             headers=headers,
             timeout=10
         )
 
         if response.status_code == 200:
-            token_data = response.json()
-            is_active = token_data.get('active', False)
+            user_data = response.json()
+            team_user = user_data.get('team_user', {})
+            user_id = team_user.get('user_id')
 
-            if is_active:
-                print(f"✓ Token is valid!")
+            if user_id:
+                print(f"✓ Token is valid! (User ID: {user_id})")
                 return True
             else:
-                print(f"✗ Token is not active")
+                print(f"✗ Invalid response format from API")
                 return False
         else:
             print(f"✗ Token validation failed: {response.status_code}")
